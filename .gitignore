@@ -1,0 +1,29 @@
+# ── Python environment ─────────────────────────────
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# ── Models & vector DB (large / regenerable) ───────
+models_gguf/
+*.gguf
+*.bin
+app/chroma_db/
+app/chroma_db_backup/
+
+# ── Bundled runtimes ───────────────────────────────
+ollama/
+
+# ── Node ───────────────────────────────────────────
+**/node_modules/
+
+# ── Dell documentation PDFs (fetch with download_docs.ps1) ──
+docs/
+
+# ── Archives / portable bundles ────────────────────
+*.zip
+
+# ── OS / editor cruft ──────────────────────────────
+.DS_Store
+Thumbs.db
+*.log

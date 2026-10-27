@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OneFS Storage Administration</title>
+<style>
+  :root{
+    --dell-blue:#0076CE; --dell-blue-dark:#005a9e; --nav-blue:#0076CE;
+    --ink:#222; --muted:#6b7177; --link:#0076CE;
+    --border:#d8dce1; --panel-head:#f7f8fa; --table-head:#eef1f4; --row-alt:#fafbfc;
+    --green:#39a845; --orange:#f0852b;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:Arial,Helvetica,"Segoe UI",sans-serif;color:var(--ink);
+       background:#fff;font-size:13px;}
+  a{color:var(--link);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+
+  /* ── Top header ─────────────────────────────────────────── */
+  .topbar{max-width:1280px;margin:0 auto;padding:14px 28px 8px;display:flex;
+          justify-content:space-between;align-items:flex-start;}
+  .brand{font-size:18px;color:#1a1a1a;}
+  .topright{text-align:right;font-size:12px;color:#444;}
+  .topright .links a{margin-left:4px;}
+  .topright .cluster{margin-top:10px;color:#222;}
+  .topright .cluster b{font-weight:bold;}
+  .info-i{display:inline-block;width:14px;height:14px;line-height:14px;text-align:center;
+          background:var(--dell-blue);color:#fff;border-radius:50%;font-size:10px;font-style:normal;
+          vertical-align:middle;}
+
+  /* ── Nav bar ────────────────────────────────────────────── */
+  .navwrap{background:var(--nav-blue);}
+  .nav{max-width:1280px;margin:0 auto;display:flex;}
+  .nav > .item{position:relative;}
+  .nav > .item > a{display:block;color:#fff;padding:13px 22px;font-size:14px;font-weight:bold;
+                   white-space:nowrap;cursor:pointer;}
+  .nav > .item:hover > a{background:rgba(255,255,255,.12);}
+  .caret{font-size:9px;margin-left:6px;vertical-align:middle;}
+  .menu{position:absolute;top:100%;left:0;min-width:230px;background:#fff;
+        border:1px solid #c9ced4;box-shadow:0 6px 16px rgba(0,0,0,.18);
+        display:none;z-index:50;padding:4px 0;}
+  .nav > .item:hover .menu{display:block;}
+  .menu a{display:block;padding:7px 18px;color:var(--link);font-size:13px;font-weight:normal;cursor:pointer;}
+  .menu a:hover{background:#eef4fb;text-decoration:none;}
+  /* click-to-navigate pulse on a top-nav menu */
+  .nav .item.pulse > .menu{display:block;animation:navglow 1.1s ease-in-out 2;}
+  .nav .item.pulse > a{background:rgba(255,255,255,.30);}
+  @keyframes navglow{0%,100%{box-shadow:0 0 0 0 rgba(0,118,206,0);}50%{box-shadow:0 0 0 3px rgba(0,118,206,.6);}}
+
+  /* ── Content ────────────────────────────────────────────── */
+  .content{max-width:1280px;margin:0 auto;padding:18px 28px 60px;}
+  .page{display:none;}
+  .page.active{display:block;}
+  .banner{background:#e8f3fc;border:1px solid #bcdcf3;border-radius:3px;padding:12px 16px;
+          display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+  .banner .b-i{color:var(--dell-blue);margin-right:8px;font-weight:bold;}
+  .banner .b-title{font-weight:bold;}
+  .banner .b-sub{color:#555;margin-top:3px;font-size:12px;}
+  .banner .b-right{font-size:12px;white-space:nowrap;}
+  .x{color:#888;cursor:pointer;margin-left:14px;}
+
+  h1.page-title{font-size:27px;font-weight:normal;margin:6px 0 14px;}
+
+  .tabs{display:flex;gap:4px;}
+  .tab{padding:8px 20px;background:#e3e7ea;color:#333;border:1px solid #cfd4d9;
+       border-bottom:none;border-radius:5px 5px 0 0;font-size:13px;cursor:pointer;}
+  .tab.active{background:var(--dell-blue);color:#fff;border-color:var(--dell-blue);font-weight:bold;}
+  .tabbar{height:5px;background:var(--dell-blue);border-radius:2px;margin-bottom:18px;}
+
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:18px;align-items:start;}
+  .stamp{text-align:right;color:var(--muted);font-size:12px;margin-bottom:6px;}
+
+  .panel{border:1px solid var(--border);border-radius:3px;margin-bottom:18px;background:#fff;}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;
+              padding:10px 14px;border-bottom:1px solid var(--border);}
+  .panel-head .t{font-weight:bold;font-size:14px;}
+  .panel-body{padding:12px 14px;}
+
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{background:var(--table-head);text-align:left;padding:7px 9px;border:1px solid var(--border);
+     font-weight:bold;color:#3a3f44;white-space:nowrap;}
+  td{padding:7px 9px;border:1px solid var(--border);vertical-align:middle;}
+  tr.totals td{background:#f4f6f8;font-weight:bold;}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--green);}
+  .muted{color:var(--muted);}
+  .center{text-align:center;}
+
+  .btn-blue{background:var(--dell-blue);color:#fff;border:none;border-radius:3px;padding:8px 14px;
+            font-size:13px;font-weight:bold;cursor:pointer;}
+  .btn-blue:hover{background:var(--dell-blue-dark);}
+  .btn-ghost{background:#fff;border:1px solid #c4ccd4;border-radius:3px;padding:4px 10px;
+             font-size:12px;cursor:pointer;color:#333;}
+  .pill{background:var(--dell-blue);color:#fff;border-radius:11px;padding:2px 11px;font-size:11px;font-weight:bold;}
+  .row-actions{display:flex;gap:6px;}
+  .legend-bar{border:1px solid var(--border);border-radius:3px;padding:10px 14px;margin-top:6px;
+              display:flex;gap:26px;font-size:12px;color:#444;}
+
+  /* event severity + explain link */
+  .sev{display:inline-block;border-radius:3px;padding:1px 8px;font-size:11px;font-weight:bold;color:#fff;}
+  .sev.crit{background:#c0392b;} .sev.warn{background:#e08a1e;} .sev.info{background:#5b86a8;}
+  .ev-explain{color:var(--dell-blue);cursor:pointer;font-weight:bold;white-space:nowrap;}
+  .ev-explain:hover{text-decoration:underline;}
+
+  /* inline field helper (Ask AI about this) */
+  .help{display:inline-block;margin-left:6px;cursor:pointer;font-size:13px;opacity:.5;
+        vertical-align:middle;transition:opacity .15s, transform .15s;user-select:none;}
+  .help:hover{opacity:1;transform:scale(1.2);}
+
+  /* mini bar charts */
+  .legend{display:flex;flex-direction:column;gap:6px;margin-top:12px;font-size:12px;}
+  .legend span{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:7px;vertical-align:middle;}
+  .barrow{height:34px;background:#eef1f4;border-radius:2px;display:flex;overflow:hidden;margin-bottom:6px;}
+  .seg{height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:bold;}
+  .axis{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-top:2px;}
+  .empty{padding:26px;text-align:center;color:var(--muted);}
+
+  /* forms (auditing) */
+  .section-label{color:var(--dell-blue);font-weight:bold;border-bottom:1px solid #e3e7ea;
+                 padding-bottom:5px;margin:16px 0 12px;}
+  .checkrow{display:flex;align-items:center;gap:9px;margin:9px 0;font-size:13px;}
+  .textinput{border:1px solid #cfd4d9;border-radius:3px;padding:7px 10px;font-size:13px;width:360px;}
+  .warn{color:#c0392b;font-size:12px;margin-top:4px;}
+
+  /* ── Floating assistant button ──────────────────────────── */
+  #ai-fab{position:fixed;right:24px;bottom:24px;z-index:200;background:var(--dell-blue);
+          color:#fff;border:none;border-radius:28px;padding:13px 20px;font-size:14px;font-weight:bold;
+          cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.28);display:flex;align-items:center;gap:9px;
+          transition:transform .15s, box-shadow .15s;}
+  #ai-fab:hover{transform:translateY(-2px);box-shadow:0 7px 20px rgba(0,0,0,.34);}
+  #ai-fab .spark{font-size:17px;}
+
+  /* ── Slide-out panel ────────────────────────────────────── */
+  #ai-panel{position:fixed;top:0;right:0;width:420px;max-width:94vw;height:100%;
+            background:#f5f6f8;z-index:210;box-shadow:-6px 0 24px rgba(0,0,0,.22);
+            transform:translateX(100%);transition:transform .28s ease;display:flex;flex-direction:column;}
+  #ai-panel.open{transform:translateX(0);}
+  .ai-head{background:var(--dell-blue);color:#fff;padding:16px 18px;display:flex;
+           align-items:center;gap:12px;}
+  .ai-head .logo{font-size:22px;}
+  .ai-head h2{margin:0;font-size:16px;font-weight:bold;}
+  .ai-head .sub{font-size:11.5px;opacity:.9;margin-top:2px;}
+  .ai-head .close{margin-left:auto;cursor:pointer;font-size:20px;opacity:.9;line-height:1;}
+  .ai-head .close:hover{opacity:1;}
+  .ai-ctx{background:#eaf3fb;border-bottom:1px solid #d2e3f3;color:#2c5575;font-size:11.5px;
+          padding:7px 16px;display:flex;align-items:center;gap:6px;}
+  .ai-ctx b{color:#1c3e5e;}
+
+  .ai-body{flex:1;overflow-y:auto;padding:16px;}
+  .msg{margin:8px 0;max-width:88%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.5;
+       white-space:pre-wrap;word-wrap:break-word;}
+  .msg.user{background:var(--dell-blue);color:#fff;margin-left:auto;border-bottom-right-radius:4px;}
+  .msg.bot{background:#fff;border:1px solid #e2e5e9;border-bottom-left-radius:4px;
+           box-shadow:0 1px 2px rgba(0,0,0,.05);}
+  .msg.bot strong{font-weight:bold;}
+  /* code blocks + inline code (F5) */
+  .codewrap{position:relative;margin:9px 0;}
+  .codewrap pre{background:#1e2530;color:#e8eef5;border-radius:6px;padding:11px 13px;margin:0;
+       font-family:Consolas,"Courier New",monospace;font-size:12px;overflow-x:auto;white-space:pre;}
+  .copy{position:absolute;top:6px;right:6px;background:#33404f;color:#cfe0f2;border:none;border-radius:4px;
+        font-size:11px;padding:3px 9px;cursor:pointer;}
+  .copy:hover{background:#445163;}
+  .msg.bot code{background:#eef1f4;border:1px solid #e0e4e8;border-radius:3px;padding:1px 5px;
+       font-family:Consolas,"Courier New",monospace;font-size:12px;}
+  .msg.bot .codewrap code{background:none;border:none;padding:0;}
+  /* click-to-navigate links inside answers (F2) */
+  .ai-link{color:var(--dell-blue);font-weight:bold;cursor:pointer;border-bottom:1px dotted var(--dell-blue);}
+  .ai-link:hover{background:#eef4fb;}
+
+  .sources{margin-top:8px;display:flex;flex-wrap:wrap;gap:5px;}
+  .src{font-size:10.5px;color:#37506e;background:#eef4fb;border:1px solid #cdddf0;
+       border-radius:4px;padding:2px 7px;}
+  .suggest{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;}
+  .chip{font-size:12px;color:var(--dell-blue);background:#fff;border:1px solid #cdddf0;
+        border-radius:14px;padding:6px 11px;cursor:pointer;}
+  .chip:hover{background:#eef4fb;}
+  .iiq-redirect{background:#f0f7fd;border:1px solid #bcdcf3;border-left:4px solid var(--dell-blue);
+                border-radius:6px;padding:12px 14px;}
+  .iiq-r-title{font-weight:bold;color:#1a4f7a;margin-bottom:5px;}
+  .iiq-r-body{color:#37506e;font-size:12.5px;line-height:1.55;margin-bottom:11px;}
+  .iiq-r-btn{display:inline-block;background:var(--dell-blue);color:#fff !important;font-weight:bold;
+             padding:7px 15px;border-radius:4px;font-size:12.5px;}
+  .iiq-r-btn:hover{background:var(--dell-blue-dark);text-decoration:none;}
+  .typing span{display:inline-block;width:6px;height:6px;margin:0 1px;background:#9aa3ad;
+               border-radius:50%;animation:blink 1.2s infinite both;}
+  .typing span:nth-child(2){animation-delay:.2s;}
+  .typing span:nth-child(3){animation-delay:.4s;}
+  @keyframes blink{0%,80%,100%{opacity:.2;}40%{opacity:1;}}
+
+  .ai-input{border-top:1px solid #e0e3e7;background:#fff;padding:12px;display:flex;gap:8px;}
+  .ai-input input{flex:1;border:1px solid #cfd4d9;border-radius:20px;padding:10px 15px;font-size:13px;outline:none;}
+  .ai-input input:focus{border-color:var(--dell-blue);}
+  .ai-input button{background:var(--dell-blue);color:#fff;border:none;border-radius:50%;
+                   width:40px;height:40px;font-size:16px;cursor:pointer;}
+  .ai-input button:disabled{opacity:.5;cursor:default;}
+  .ai-foot{text-align:center;font-size:10.5px;color:#9aa3ad;padding:0 0 8px;background:#fff;}
+</style>
+</head>
+<body>
+
+<!-- ── OneFS WebUI replica (mock backdrop) ──────────────────── -->
+<header class="topbar">
+  <div class="brand">OneFS Storage Administration</div>
+  <div class="topright">
+    <div class="links">Logged in as <b>root</b> &nbsp;|&nbsp;
+      <a>Review recent events</a> &nbsp;|&nbsp; <a>Log out</a> &nbsp;|&nbsp; <a>Help</a>
+      <i class="info-i">?</i></div>
+    <div class="cluster">Cluster Name: <b>PSCALE-DEMO01</b> (OneFS Version: 9.10.1.0
+      <i class="info-i">i</i> ) Node 20</div>
+  </div>
+</header>
+
+<div class="navwrap">
+  <nav class="nav">
+    <div class="item"><a onclick="go('dashboard')">Dashboard <span class="caret">▼</span></a>
+      <div class="menu"><a onclick="go('dashboard')">Cluster overview</a><a onclick="go('dashboard')">Cluster status</a><a>Node status</a><a>Performance</a></div></div>
+    <div class="item"><a>Cluster management <span class="caret">▼</span></a>
+      <div class="menu">
+        <a>General settings</a><a>Automatic Replacement Recognition</a><a>Events and alerts</a>
+        <a onclick="go('network')">Network configuration</a><a>Firewall configuration</a><a>Hardware configuration</a>
+        <a>Job operations</a><a onclick="go('auditing')">Auditing</a><a>Diagnostics</a><a>Licensing</a>
+        <a>HealthCheck</a><a>Upgrade</a><a>Patches and Firmware</a><a>Smart QoS</a></div></div>
+    <div class="item"><a>File System <span class="caret">▼</span></a>
+      <div class="menu"><a>File system explorer</a><a>SmartPools</a><a>Storage pools</a><a>Deduplication</a><a>File filter</a></div></div>
+    <div class="item"><a>Data protection <span class="caret">▼</span></a>
+      <div class="menu"><a>SnapshotIQ</a><a>SyncIQ</a><a>SmartLock</a><a>NDMP backup</a></div></div>
+    <div class="item"><a>Access <span class="caret">▼</span></a>
+      <div class="menu"><a>Access zones</a><a>Authentication providers</a><a>Membership and roles</a><a>ACL policy settings</a></div></div>
+    <div class="item"><a>Protocols <span class="caret">▼</span></a>
+      <div class="menu"><a>Windows sharing (SMB)</a><a>UNIX sharing (NFS)</a><a>S3</a><a>HDFS</a><a>HTTP &amp; FTP</a></div></div>
+  </nav>
+</div>
+
+<main class="content">
+  <div class="banner">
+    <div><span class="b-i">ⓘ</span>
+      <span class="b-title">Setup connection to Dell Technologies connectivity services</span>
+      <div class="b-sub">Stay ahead of disruptions with effortless support and richer insights.
+        &nbsp; <a>Remind me later</a> or <a>Don't show again</a></div></div>
+    <div class="b-right">Go to <a>Connectivity Services</a> <span class="x" onclick="this.closest('.banner').style.display='none'">✕</span></div>
+  </div>
+
+  <!-- ═══ Dashboard ═══════════════════════════════════════════ -->
+  <section class="page active" data-page="dashboard">
+    <h1 class="page-title">Dashboard</h1>
+    <div class="tabs">
+      <div class="tab active">Cluster status</div>
+      <div class="tab">Node status</div>
+      <div class="tab">Configuration</div>
+    </div>
+    <div class="tabbar"></div>
+
+    <div class="stamp">As of 10:59:25 AM PST</div>
+    <div class="grid">
+      <div>
+        <div class="panel">
+          <div class="panel-head"><div class="t">New event groups</div><a>Manage event groups</a></div>
+          <div class="panel-body">
+            <table>
+              <tr><th>Sev</th><th>ID</th><th>Time noticed</th><th>Message</th><th></th></tr>
+              <tr>
+                <td><span class="sev crit">Critical</span></td><td>920100012</td><td>Jun 12 09:14</td>
+                <td>Drive in bay 3 on node 10 reported a predictive failure (SMART)</td>
+                <td><span class="ev-explain" onclick="AI.explainEvent(0)">✨ Explain</span></td>
+              </tr>
+              <tr>
+                <td><span class="sev warn">Warning</span></td><td>920100007</td><td>Jun 12 08:02</td>
+                <td>Node 20 lost NTP synchronization; time drift detected</td>
+                <td><span class="ev-explain" onclick="AI.explainEvent(1)">✨ Explain</span></td>
+              </tr>
+              <tr>
+                <td><span class="sev warn">Warning</span></td><td>920100021</td><td>Jun 11 23:51</td>
+                <td>Directory quota on /ifs/data/projects exceeded its advisory threshold</td>
+                <td><span class="ev-explain" onclick="AI.explainEvent(2)">✨ Explain</span></td>
+              </tr>
+            </table>
+            <div class="muted" style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px;">↻ Displaying 3 of 3 event groups</div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="t">Status &mdash; <span class="dot"></span> PSCALE-DEMO01</div></div>
+          <div class="panel-body">
+            <table>
+              <tr><th>Stat</th><th>ID</th><th>In b/s</th><th>Out b/s</th><th>Total</th><th>SSD used</th><th>SSD size</th><th>%</th></tr>
+              <tr><td><span class="dot"></span></td><td>10</td><td>149.33 b</td><td>3.83 M</td><td>3.83 M</td><td>245.85 G</td><td>5.57 T</td><td>4</td></tr>
+              <tr><td><span class="dot"></span></td><td>20</td><td>326.50 k</td><td>1.97 M</td><td>2.30 M</td><td>247.47 G</td><td>5.57 T</td><td>4</td></tr>
+              <tr><td><span class="dot"></span></td><td>30</td><td>0.00 b</td><td>832.03 k</td><td>832.03 k</td><td>245.97 G</td><td>5.57 T</td><td>4</td></tr>
+              <tr class="totals"><td>Totals</td><td>3</td><td>326.65 k</td><td>6.63 M</td><td>6.96 M</td><td>739.29 G</td><td>16.72 T</td><td>4</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="panel">
+          <div class="panel-head"><div class="t">Cluster size
+            <span class="help" title="Ask AI about this" onclick='AI.fieldAsk("How does OneFS report cluster size and capacity, including SSD used, VHS, and available space?")'>✨</span></div></div>
+          <div class="panel-body">
+            <div class="barrow">
+              <div class="seg" style="width:10%;background:#7d3cc6;"></div>
+              <div class="seg" style="width:10%;background:var(--orange);"></div>
+              <div class="seg" style="width:59%;background:#f6a96b;">79%</div>
+            </div>
+            <div class="axis"><span>0.0 B</span><span>18.0 TB</span><span>36.0 TB</span></div>
+            <div class="legend">
+              <div><span style="background:#7d3cc6;"></span>SSD used 739.29 GB</div>
+              <div><span style="background:var(--orange);"></span>VHS 3.60 TB</div>
+              <div><span style="background:#f6a96b;"></span>SSD avail 16.00 TB</div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="t">Storage efficiency</div></div>
+          <div class="panel-body">
+            <div class="barrow"><div class="seg" style="width:36%;background:#1f4e79;">721.5 GB</div></div>
+            <div class="barrow"><div class="seg" style="width:75%;background:#2e86c1;">1.5 TB</div></div>
+            <div class="axis"><span>0.0 B</span><span>931.0 GB</span><span>2.0 TB</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Network configuration ═══════════════════════════════ -->
+  <section class="page" data-page="network">
+    <h1 class="page-title">Network configuration</h1>
+    <div class="tabs">
+      <div class="tab active">External network</div>
+      <div class="tab">Internal network</div>
+      <div class="tab">DNS cache</div>
+      <div class="tab">Settings</div>
+    </div>
+    <div class="tabbar"></div>
+
+    <div class="panel">
+      <div class="panel-head"><div class="t">External network</div><button class="btn-blue">Add a groupnet</button></div>
+      <div class="panel-body">
+        <table>
+          <tr><th>Networks</th><th>Detail</th><th>Type</th><th>Description</th><th>Actions</th></tr>
+          <tr>
+            <td>🌐 groupnet0
+              <span class="help" title="Ask AI about this" onclick='AI.fieldAsk("What is a groupnet in OneFS and what does it contain?")'>✨</span></td>
+            <td>DNS servers: 192.0.2.53</td>
+            <td><span class="pill">Default</span></td><td>Initial groupnet</td>
+            <td><div class="row-actions"><button class="btn-ghost">View/Edit</button><button class="btn-ghost">More ▾</button></div></td>
+          </tr>
+          <tr>
+            <td style="padding-left:26px;">🔗 subnet-syncIQ</td><td>NET 198.51.100.0/24</td>
+            <td><span class="pill">IPv4</span></td><td></td>
+            <td><div class="row-actions"><button class="btn-ghost">View/Edit</button><button class="btn-ghost">More ▾</button></div></td>
+          </tr>
+          <tr>
+            <td style="padding-left:26px;">🔗 subnet0
+              <span class="help" title="Ask AI about this" onclick='AI.fieldAsk("What is a subnet in OneFS networking and how do I add one to the external network?")'>✨</span></td>
+            <td>NET 192.0.2.0/24</td>
+            <td><span class="pill">IPv4</span></td><td>Initial subnet</td>
+            <td><div class="row-actions"><button class="btn-ghost">View/Edit</button><button class="btn-ghost">More ▾</button></div></td>
+          </tr>
+        </table>
+        <div class="legend-bar"><span>🌐 Groupnet</span><span>🔗 Subnet</span><span>🗄️ Pool</span><span>📋 Rule</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Auditing ════════════════════════════════════════════ -->
+  <section class="page" data-page="auditing">
+    <h1 class="page-title">Auditing</h1>
+    <div class="tabs"><div class="tab active">Settings</div></div>
+    <div class="tabbar"></div>
+
+    <div class="panel">
+      <div class="panel-head"><div class="t">Edit auditing settings</div></div>
+      <div class="panel-body">
+        <div class="section-label">Settings</div>
+        <div class="checkrow"><input type="checkbox" checked> Enable configuration change auditing
+          <span class="help" title="Ask AI about this" onclick='AI.fieldAsk("What does enabling configuration change auditing do in OneFS 9.12?")'>✨</span></div>
+        <div class="checkrow"><input type="checkbox" checked> Enable protocol access auditing
+          <span class="help" title="Ask AI about this" onclick='AI.fieldAsk("What does enabling protocol access auditing do in OneFS 9.12?")'>✨</span></div>
+
+        <div class="section-label">Audited zones</div>
+        <table style="max-width:520px;">
+          <tr><th>Zone</th><th style="width:120px;">Actions</th></tr>
+          <tr><td>System</td><td><button class="btn-ghost">Remove</button></td></tr>
+          <tr><td>Testaudit</td><td><button class="btn-ghost">Remove</button></td></tr>
+        </table>
+
+        <div class="section-label">Event forwarding</div>
+        <div style="font-size:13px;font-weight:bold;margin-bottom:6px;">CEE server URIs
+          <span class="muted" style="font-weight:normal;">(should start with http:// and include port and path to CEE server if necessary)</span>
+          <span class="help" title="Ask AI about this" onclick='AI.fieldAsk("What is a CEE server and how do I configure CEE server URIs for protocol auditing in OneFS?")'>✨</span></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn-ghost">Remove URI</button>
+          <input class="textinput" value="https://203.0.113.12:8080/ifs">
+        </div>
+        <div class="warn">⚠ URIs should start with http:// and include port and path to CEE server if necessary</div>
+        <button class="btn-ghost" style="margin-top:10px;">➕ Add another CEE server URI</button>
+        <div style="font-size:13px;font-weight:bold;margin-top:16px;">Storage cluster name
+          <span class="muted" style="font-weight:normal;">(this field is required only if needed by your third-party audit application)</span></div>
+        <input class="textinput" style="margin-top:6px;" placeholder="">
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ── Embedded AI assistant ────────────────────────────────── -->
+<button id="ai-fab" onclick="AI.toggle(true)">
+  <span class="spark">✨</span> AI Assistant
+</button>
+
+<aside id="ai-panel" aria-label="PowerScale AI Assistant">
+  <div class="ai-head">
+    <div class="logo">🗄️</div>
+    <div>
+      <h2>PowerScale Assistant</h2>
+      <div class="sub">OneFS 9.12 · Powered by local AI · No data leaves the cluster</div>
+    </div>
+    <div class="close" onclick="AI.toggle(false)">✕</div>
+  </div>
+  <div class="ai-ctx">📍 Viewing: <b id="ai-ctx-page">Dashboard</b></div>
+  <div class="ai-body" id="ai-body"></div>
+  <div class="ai-input">
+    <input id="ai-text" type="text" placeholder="Ask about OneFS 9.12 administration..."
+           onkeydown="if(event.key==='Enter')AI.send()" autocomplete="off">
+    <button id="ai-send" onclick="AI.send()">➤</button>
+  </div>
+  <div class="ai-foot">Answers grounded in official OneFS 9.12 documentation</div>
+</aside>
+
+<script>
+// ── WebUI page state ──────────────────────────────────────────
+const PAGES = { dashboard:"Dashboard", network:"Network configuration", auditing:"Auditing" };
+let currentPage = "dashboard";
+
+function go(page){
+  if(!PAGES[page]) return;
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(s => s.classList.toggle('active', s.dataset.page === page));
+  document.getElementById('ai-ctx-page').textContent = PAGES[page];
+  window.scrollTo({top:0, behavior:'smooth'});
+  AI.onPageChange();
+}
+
+// Open + pulse a top-nav menu to show where an off-map destination lives (F2)
+function openNavMenu(menuName){
+  const items = [...document.querySelectorAll('.nav .item')];
+  const it = items.find(i => i.querySelector('a').innerText.trim().toLowerCase().startsWith(menuName.toLowerCase()));
+  if(!it) return;
+  window.scrollTo({top:0, behavior:'smooth'});
+  it.classList.add('pulse');
+  setTimeout(() => it.classList.remove('pulse'), 2600);
+}
+
+// ── Assistant ─────────────────────────────────────────────────
+const AI = (() => {
+  // Page-specific suggested questions
+  const SUGGEST = {
+    dashboard: [
+      "What CLI command checks cluster health?",
+      "How do I create an SMB share in OneFS 9.12?",
+      "How do I configure an access zone?",
+    ],
+    network: [
+      "What is a groupnet in OneFS?",
+      "How do I add a subnet to the external network?",
+      "What network ports does NFS require?",
+      "How do I configure an IP address pool?",
+    ],
+    auditing: [
+      "How do I enable protocol access auditing?",
+      "What is a CEE server and how do I configure it?",
+      "Which events does OneFS configuration auditing capture?",
+    ],
+  };
+
+  // Mock-but-realistic dashboard events, grounded by the Event Reference Guide (F3)
+  const EVENTS = [
+    { id:"920100012", msg:"Drive in bay 3 on node 10 reported a predictive failure (SMART)" },
+    { id:"920100007", msg:"Node 20 lost NTP synchronization and time drift was detected" },
+    { id:"920100021", msg:"Directory quota on /ifs/data/projects exceeded its advisory threshold" },
+  ];
+
+  // Click-to-navigate destination dictionary (F2). First match per entry is linkified.
+  // type 'page' -> navigate a real page; type 'nav' -> pulse the top-nav menu it lives under.
+  const NAV = [
+    { pat:"Network configuration", type:"page", target:"network" },
+    { pat:"Auditing",              type:"page", target:"auditing" },
+    { pat:"Dashboard",             type:"page", target:"dashboard" },
+    { pat:"Access Zones?",                       type:"nav", target:"Access" },
+    { pat:"Authentication Providers?",           type:"nav", target:"Access" },
+    { pat:"Windows Sharing \\(SMB\\)|SMB Shares?",type:"nav", target:"Protocols" },
+    { pat:"UNIX Sharing \\(NFS\\)|NFS Exports?", type:"nav", target:"Protocols" },
+    { pat:"SmartPools",                          type:"nav", target:"File System" },
+    { pat:"Storage Pools?",                      type:"nav", target:"File System" },
+    { pat:"SnapshotIQ",                          type:"nav", target:"Data protection" },
+    { pat:"SyncIQ",                              type:"nav", target:"Data protection" },
+  ];
+
+  // Performance/monitoring questions belong to InsightIQ (hard wall). If the user
+  // asks one here in the OneFS WebUI, don't attempt an answer — point them to the
+  // InsightIQ assistant with a link instead.
+  const PERF_RE = /\b(perform(ance|ing)?|latency|throughput|iops|bottlenecks?|slow(ness|er|ly)?|response time|workload|utili[sz]ation|busiest|hot ?node|node performance|protocol (ops?|operations?|latency)|active clients?|connected clients?|cpu|memory (usage|utili\w*)|disk (usage|i\/?o|throughput|operations?)|network throughput)\b/i;
+  function isPerfQuestion(q){ return PERF_RE.test(q); }
+  function redirectCard(){
+    return '<div class="iiq-redirect">'
+      + '<div class="iiq-r-title">📊 Performance &amp; monitoring live in InsightIQ</div>'
+      + '<div class="iiq-r-body">This OneFS WebUI assistant answers configuration and administration '
+      + 'questions from the OneFS documentation. For performance data — latency, throughput, CPU, '
+      + 'and per-node metrics — use the InsightIQ assistant.</div>'
+      + '<a class="iiq-r-btn" href="/insightiq">Open InsightIQ →</a>'
+      + '</div>';
+  }
+
+  let busy = false, started = false;
+  const body = () => document.getElementById('ai-body');
+  const esc  = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  // Light render used while streaming (escape + bold + keep newlines)
+  function lightRender(s){ return esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>'); }
+
+  // Full render on completion: code blocks (F5) + nav links (F2) + bold/inline code
+  function renderRich(raw){
+    const blocks = [];
+    let t = raw;
+    // fenced ``` code blocks -> placeholder token
+    t = t.replace(/```[a-zA-Z0-9]*\n?([\s\S]*?)```/g, (m, code) => {
+      blocks.push(code.replace(/\n+$/,'')); return `@@CB${blocks.length-1}@@`;
+    });
+    // inline-backtick CLI commands (`isi ...`) -> promote to a copyable block
+    t = t.replace(/`((?:sudo\s+)?isi\s[^`\n]*)`/g, (m, cmd) => {
+      blocks.push(cmd.trim()); return `@@CB${blocks.length-1}@@`;
+    });
+    // bare standalone "isi ..." command lines -> code block (fallback if unfenced)
+    t = t.split('\n').map(line => {
+      if(/^\s*(sudo\s+)?isi\s+\S/.test(line)){
+        blocks.push(line.trim()); return `@@CB${blocks.length-1}@@`;
+      }
+      return line;
+    }).join('\n');
+    // escape, then inline formatting
+    t = esc(t);
+    t = t.replace(/`([^`\n]+)`/g, (m,c) => `<code>${c}</code>`);
+    t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // nav linkify — first occurrence per destination
+    for(const d of NAV){
+      const re = new RegExp(d.pat, 'i');
+      t = t.replace(re, m => `<span class="ai-link" data-type="${d.type}" data-target="${d.target}">${m}</span>`);
+    }
+    // re-insert code blocks with a Copy button
+    t = t.replace(/@@CB(\d+)@@/g, (m,i) =>
+      `<div class="codewrap"><button class="copy" onclick="AI.copy(this)">Copy</button><pre>${esc(blocks[+i])}</pre></div>`);
+    return t;
+  }
+
+  function copy(btn){
+    const code = btn.parentElement.querySelector('pre').innerText;
+    const done = () => { const o = btn.textContent; btn.textContent = 'Copied!'; setTimeout(()=>btn.textContent=o, 1400); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(code).then(done).catch(()=>fallbackCopy(code, done));
+    } else { fallbackCopy(code, done); }
+  }
+  function fallbackCopy(text, done){
+    const ta = document.createElement('textarea'); ta.value = text;
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta); done();
+  }
+
+  function navTo(type, target){ if(type === 'page') go(target); else openNavMenu(target); }
+
+  function welcome(){
+    const chips = (SUGGEST[currentPage]||SUGGEST.dashboard)
+      .map(q => `<div class="chip" onclick="AI.ask('${q.replace(/'/g,"\\'")}')">${q}</div>`).join('');
+    body().innerHTML =
+      `<div class="msg bot">👋 Hi! I'm your PowerScale assistant. I can see you're on the
+       <strong>${PAGES[currentPage]}</strong> page. Ask me anything about OneFS 9.12 —
+       I answer only from the official documentation and cite my sources.
+       <div class="suggest">${chips}</div></div>`;
+  }
+  function onPageChange(){ if(!started) welcome(); }
+
+  function toggle(open){
+    document.getElementById('ai-panel').classList.toggle('open', open);
+    if(open){ if(!started) welcome(); document.getElementById('ai-text').focus(); }
+  }
+
+  function addMsg(cls, html){
+    const d = document.createElement('div');
+    d.className = 'msg ' + cls; d.innerHTML = html;
+    body().appendChild(d); body().scrollTop = body().scrollHeight;
+    return d;
+  }
+
+  function ask(q){ document.getElementById('ai-text').value = q; send(); }
+  function fieldAsk(q){ toggle(true); ask(q); }                       // F1
+  function explainEvent(i){                                           // F3
+    const e = EVENTS[i];
+    go('dashboard');
+    fieldAsk(`Explain this OneFS event ${e.id}: ${e.msg}. What does it mean and how should an administrator resolve it?`);
+  }
+
+  async function send(){
+    if(busy) return;
+    const input = document.getElementById('ai-text');
+    const q = input.value.trim();
+    if(!q) return;
+    input.value = '';
+    busy = true; started = true; document.getElementById('ai-send').disabled = true;
+
+    addMsg('user', esc(q));
+
+    // Hard wall: performance/monitoring questions are answered by InsightIQ, not here.
+    if(isPerfQuestion(q)){
+      addMsg('bot', redirectCard());
+      busy = false; document.getElementById('ai-send').disabled = false; input.focus();
+      return;
+    }
+
+    const bot = addMsg('bot', '<div class="typing"><span></span><span></span><span></span></div>');
+    let answer = '', sources = [], errMsg = null;
+
+    try {
+      const res = await fetch('/api/chat', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ question:q, context: PAGES[currentPage], product:'onefs' })
+      });
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      while(true){
+        const {value, done} = await reader.read();
+        if(done) break;
+        buf += dec.decode(value, {stream:true});
+        const parts = buf.split('\n\n'); buf = parts.pop();
+        for(const p of parts){
+          const line = p.replace(/^data: /, '').trim();
+          if(!line) continue;
+          const ev = JSON.parse(line);
+          if(ev.token){ answer += ev.token; bot.innerHTML = lightRender(answer); body().scrollTop = body().scrollHeight; }
+          if(ev.error){ errMsg = ev.error; }
+          if(ev.done && ev.sources){ sources = ev.sources; }
+        }
+      }
+      // Surface a real backend error instead of masking it as the fallback.
+      if(errMsg){
+        bot.innerHTML = '⚠️ ' + esc(errMsg);
+      } else {
+        let html = answer.trim()
+          ? renderRich(answer)
+          : "I don't have sufficient information in the loaded documentation to answer this accurately.";
+        if(sources.length){
+          html += '<div class="sources">' + sources.map(s => `<span class="src">📄 ${esc(s)}</span>`).join('') + '</div>';
+        }
+        bot.innerHTML = html;
+      }
+      body().scrollTop = body().scrollHeight;
+    } catch(e){
+      bot.innerHTML = '⚠️ Connection error: ' + esc(String(e));
+    } finally {
+      busy = false; document.getElementById('ai-send').disabled = false;
+      input.focus();
+    }
+  }
+
+  return { toggle, send, ask, fieldAsk, explainEvent, copy, navTo, onPageChange };
+})();
+
+// Delegated click handler for click-to-navigate links inside answers (F2)
+document.getElementById('ai-body').addEventListener('click', e => {
+  const link = e.target.closest('.ai-link');
+  if(link) AI.navTo(link.dataset.type, link.dataset.target);
+});
+</script>
+<div style="position:fixed;left:10px;bottom:10px;z-index:9999;pointer-events:none;font:11px/1.3 Arial,sans-serif;background:rgba(0,0,0,.72);color:#fff;padding:4px 8px;border-radius:4px;">Unofficial prototype &middot; sample data &middot; not a Dell product</div>
+</body>
+</html>

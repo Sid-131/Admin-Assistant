@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg font-family="ui-sans-serif, system-ui, 'Segoe UI', Arial, sans-serif" viewBox="0 0 760 858" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t2 s2">
+<rect x="0" y="0" width="100%" height="100%" fill="#f4f7fb"/>
+<title id="t2">InsightIQ assistant request flow</title>
+<desc id="s2">A question or an Explain-alert click posts to the Flask backend with product insightiq, which applies no retrieval filter so ChromaDB returns both InsightIQ and OneFS documents, then embeds, searches, builds a prompt and streams a llama3.2:3b answer with citations back to the browser.</desc>
+<defs><marker id="aw2" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L7,3 L0,6 Z" fill="#b9c6d4"/></marker></defs>
+
+<text x="28" y="30" font-size="18" font-weight="800" fill="#17212e">InsightIQ assistant — request flow</text>
+<text x="28" y="50" font-size="12" fill="#5c6a7a">insightiq.html · reads OneFS + InsightIQ docs</text>
+<rect x="470" y="20" width="16" height="16" rx="3" fill="#e3f6ef" stroke="#0f7a5c"/>
+<text x="492" y="33" font-size="11.5" fill="#5c6a7a">= reads BOTH doc sets</text>
+
+<rect x="24" y="66" width="7" height="146" rx="3" fill="#b9c6d4"/>
+<text x="15" y="139" font-size="11" font-weight="700" fill="#5c6a7a" transform="rotate(-90 15 139)" text-anchor="middle">BROWSER</text>
+<rect x="24" y="228" width="7" height="520" rx="3" fill="#0f7a5c"/>
+<text x="15" y="488" font-size="11" font-weight="700" fill="#0f7a5c" transform="rotate(-90 15 488)" text-anchor="middle">BACKEND · Flask /api/chat</text>
+<rect x="24" y="764" width="7" height="72" rx="3" fill="#b9c6d4"/>
+<text x="15" y="800" font-size="11" font-weight="700" fill="#5c6a7a" transform="rotate(-90 15 800)" text-anchor="middle">RENDER</text>
+
+<rect x="96" y="228" width="632" height="520" rx="14" fill="#eef3f9" stroke="#b9c6d4" stroke-dasharray="4 5" stroke-opacity=".7"/>
+<text x="114" y="250" font-size="11.5" font-weight="700" fill="#5c6a7a">RAG engine · same nomic + ChromaDB + llama3.2:3b as the WebUI</text>
+
+<g stroke="#b9c6d4" stroke-width="2" fill="none">
+<line x1="360" y1="128" x2="360" y2="150" marker-end="url(#aw2)"/>
+<line x1="360" y1="210" x2="360" y2="262" marker-end="url(#aw2)"/>
+<line x1="360" y1="326" x2="360" y2="344" marker-end="url(#aw2)"/>
+<line x1="360" y1="402" x2="360" y2="420" marker-end="url(#aw2)"/>
+<line x1="360" y1="500" x2="360" y2="518" marker-end="url(#aw2)"/>
+<line x1="360" y1="576" x2="360" y2="594" marker-end="url(#aw2)"/>
+<line x1="360" y1="652" x2="360" y2="670" marker-end="url(#aw2)"/>
+<line x1="360" y1="730" x2="360" y2="764" marker-end="url(#aw2)"/>
+</g>
+
+<rect x="120" y="68" width="480" height="60" rx="8" fill="#ffffff" stroke="#b9c6d4" stroke-width="1.5"/>
+<circle cx="146" cy="98" r="13" fill="#0f7a5c"/><text x="146" y="102" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">1</text>
+<text x="174" y="94" font-size="14.5" font-weight="700" fill="#17212e">User asks — or clicks “Explain” on an alert</text>
+<text x="174" y="114" font-size="11" font-family="ui-monospace, 'Consolas', monospace" fill="#5c6a7a">chat panel · or AI.explainAlert(i)</text>
+
+<rect x="120" y="150" width="480" height="60" rx="8" fill="#ffffff" stroke="#b9c6d4" stroke-width="1.5"/>
+<circle cx="146" cy="180" r="13" fill="#0f7a5c"/><text x="146" y="184" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">2</text>
+<text x="174" y="176" font-size="14.5" font-weight="700" fill="#17212e">POST /api/chat  (SSE stream)</text>
+<text x="174" y="196" font-size="11" font-family="ui-monospace, 'Consolas', monospace" fill="#5c6a7a">{ question, context:page, product:"insightiq" }</text>
+
+<rect x="120" y="262" width="480" height="64" rx="8" fill="#e3f6ef" stroke="#0f7a5c" stroke-width="1.6"/>
+<circle cx="146" cy="294" r="13" fill="#0f7a5c"/><text x="146" y="298" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">3</text>
+<text x="174" y="290" font-size="14.5" font-weight="700" fill="#17212e">Route by product → no wall</text>
+<text x="174" y="310" font-size="11" font-family="ui-monospace, 'Consolas', monospace" fill="#5c6a7a">product=insightiq  ⇒  where = None</text>
+
+<rect x="120" y="344" width="480" height="58" rx="8" fill="#ffffff" stroke="#b9c6d4" stroke-width="1.5"/>
+<circle cx="146" cy="373" r="13" fill="#0f7a5c"/><text x="146" y="377" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">4</text>
+<text x="174" y="369" font-size="14.5" font-weight="700" fill="#17212e">Embed the question</text>
+<text x="174" y="389" font-size="11" font-family="ui-monospace, 'Consolas', monospace" fill="#5c6a7a">nomic-embed-text  →  query vector</text>
+
+<rect x="120" y="420" width="480" height="80" rx="8" fill="#e3f6ef" stroke="#0f7a5c" stroke-width="1.6"/>
+<circle cx="146" cy="452" r="13" fill="#0f7a5c"/><text x="146" y="456" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">5</text>
+<text x="174" y="448" font-size="14.5" font-weight="700" fill="#17212e">Vector search — ChromaDB</text>
+<text x="174" y="468" font-size="11" font-family="ui-monospace, 'Consolas', monospace" fill="#5c6a7a">onefs_docs · top_k=5 · no filter</text>
+<text x="174" y="486" font-size="10.5" font-weight="700" fill="#0f7a5c">→ InsightIQ Admin+reports+metrics  &amp;  OneFS (Event Ref)</text>
+
+<rect x="120" y="518" width="480" height="58" rx="8" fill="#ffffff" stroke="#b9c6d4" stroke-width="1.5"/>
+<circle cx="146" cy="547" r="13" fill="#0f7a5c"/><text x="146" y="551" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">6</text>
+<text x="174" y="543" font-size="14.5" font-weight="700" fill="#17212e">Rank &amp; trim</text>
+<text x="174" y="563" font-size="11" font-family="ui-monospace, 'Consolas', monospace" fill="#5c6a7a">cosine sim · cite ≥0.35 · excerpts → 1300 chars</text>
+
+<rect x="120" y="594" width="480" height="58" rx="8" fill="#ffffff" stroke="#b9c6d4" stroke-width="1.5"/>
+<circle cx="146" cy="623" r="13" fill="#0f7a5c"/><text x="146" y="627" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">7</text>
+<text x="174" y="619" font-size="14.5" font-weight="700" fill="#17212e">Build the prompt</text>
+<text x="174" y="639" font-size="11" font-family="ui-monospace, 'Consolas', monospace" fill="#5c6a7a">SYSTEM_PROMPT + excerpts + question</text>
+
+<rect x="120" y="670" width="480" height="60" rx="8" fill="#ffffff" stroke="#b9c6d4" stroke-width="1.5"/>
+<circle cx="146" cy="700" r="13" fill="#0f7a5c"/><text x="146" y="704" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">8</text>
+<text x="174" y="696" font-size="14.5" font-weight="700" fill="#17212e">Generate — llama3.2:3b</text>
+<text x="174" y="716" font-size="11" font-family="ui-monospace, 'Consolas', monospace" fill="#5c6a7a">stream tokens (SSE) · temperature 0.2</text>
+
+<rect x="120" y="764" width="480" height="70" rx="8" fill="#ffffff" stroke="#b9c6d4" stroke-width="1.5"/>
+<circle cx="146" cy="799" r="13" fill="#0f7a5c"/><text x="146" y="803" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">9</text>
+<text x="174" y="792" font-size="14.5" font-weight="700" fill="#17212e">Render answer + citations</text>
+<text x="174" y="811" font-size="11" font-family="ui-monospace, 'Consolas', monospace" fill="#5c6a7a">📄 InsightIQ Perf Report / 6.2 Admin Guide /</text>
+<text x="174" y="826" font-size="11" font-family="ui-monospace, 'Consolas', monospace" fill="#5c6a7a">OneFS Event Reference (for alerts)</text>
+</svg>

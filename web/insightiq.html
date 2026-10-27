@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InsightIQ</title>
+<style>
+  :root{
+    --iq:#0076CE; --iq-dark:#005a9e; --ink:#22282e; --muted:#6b7278; --link:#0076CE;
+    --border:#e1e5ea; --bg:#f3f5f7; --card:#ffffff; --sidebar:#ffffff; --active:#eaf3fb;
+    --green:#5FA83C; --greenL:#dceccf; --donutgrey:#cfd4d9;
+    --red:#C0392B; --amber:#E0A21E; --info:#2E86C1; --ice:#eaf3fb;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:Arial,Helvetica,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:13px;}
+  a{color:var(--link);text-decoration:none;} a:hover{text-decoration:underline;}
+
+  /* ── Header ── */
+  .hdr{height:54px;background:var(--iq);display:flex;align-items:center;padding:0 18px;color:#fff;position:sticky;top:0;z-index:100;}
+  .hdr .dell{font-weight:bold;letter-spacing:1px;font-size:16px;}
+  .hdr .divider{width:1px;height:26px;background:rgba(255,255,255,.4);margin:0 14px;}
+  .hdr .prod{font-size:16px;}
+  .hdr .icons{margin-left:auto;display:flex;gap:20px;font-size:16px;opacity:.95;}
+  .hdr .icons span{cursor:pointer;}
+
+  /* ── Layout ── */
+  .shell{display:flex;min-height:calc(100vh - 54px);}
+  .side{width:232px;background:var(--sidebar);border-right:1px solid var(--border);flex-shrink:0;padding-top:8px;}
+  .nav-item{display:flex;align-items:center;gap:11px;padding:11px 18px;color:#3a4148;cursor:pointer;font-size:13.5px;}
+  .nav-item .ic{width:18px;text-align:center;opacity:.8;}
+  .nav-item .car{margin-left:auto;font-size:9px;opacity:.6;}
+  .nav-item:hover{background:#f5f8fb;}
+  .nav-item.active{background:var(--active);color:var(--iq);font-weight:bold;box-shadow:inset 3px 0 0 var(--iq);}
+  .subnav a{display:block;padding:8px 18px 8px 47px;color:#4a5158;font-size:12.5px;cursor:pointer;}
+  .subnav a:hover{background:#f5f8fb;text-decoration:none;}
+  .subnav a.active{color:var(--iq);font-weight:bold;background:var(--active);box-shadow:inset 3px 0 0 var(--iq);}
+
+  .main{flex:1;padding:18px 22px 60px;min-width:0;}
+  .page{display:none;} .page.active{display:block;}
+  h1.pt{font-size:20px;font-weight:normal;margin:2px 0 16px;color:#2b3138;}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .toolbar .acts{display:flex;gap:18px;font-size:12.5px;}
+
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:4px;margin-bottom:16px;}
+  .panel-h{display:flex;align-items:center;gap:8px;padding:12px 15px;border-bottom:1px solid var(--border);font-weight:bold;font-size:14px;color:#2b3138;}
+  .panel-h .r{margin-left:auto;font-weight:normal;font-size:12px;color:var(--muted);}
+  .panel-b{padding:15px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;align-items:start;}
+  .grid2{display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:start;}
+  .muted{color:var(--muted);} .ok{color:var(--green);font-weight:bold;}
+
+  /* donut */
+  .donut{width:120px;height:120px;border-radius:50%;position:relative;flex-shrink:0;}
+  .donut::after{content:"";position:absolute;inset:26px;background:var(--card);border-radius:50%;}
+  .donut .lbl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2;}
+  .donut .lbl b{font-size:22px;} .donut .lbl span{font-size:10px;color:var(--muted);}
+  .legend{display:flex;flex-direction:column;gap:8px;font-size:12.5px;}
+  .legend .row{display:flex;align-items:center;gap:8px;}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  .legend .val{margin-left:auto;font-weight:bold;}
+
+  .bar{height:16px;background:#eef1f4;border-radius:3px;overflow:hidden;display:flex;margin:8px 0;}
+  .bar > i{height:100%;display:block;}
+  .kv{display:flex;justify-content:space-between;font-size:12.5px;margin:5px 0;}
+  .kv b{font-weight:bold;}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{text-align:left;padding:9px 10px;background:#f0f3f6;border-bottom:1px solid var(--border);color:#3a4148;font-weight:bold;white-space:nowrap;}
+  td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  .sev{display:inline-block;border-radius:3px;padding:2px 9px;font-size:11px;font-weight:bold;color:#fff;}
+  .sev.crit{background:var(--red);} .sev.warn{background:var(--amber);} .sev.info{background:var(--info);}
+  .explain{color:var(--iq);cursor:pointer;font-weight:bold;white-space:nowrap;}
+  .explain:hover{text-decoration:underline;}
+
+  /* perf card */
+  .pcard{border:1px solid var(--border);border-radius:4px;padding:12px 14px;margin-bottom:12px;display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:12px;}
+  .pcard .nm{font-weight:bold;color:var(--iq);font-size:14px;}
+  .pcard .meta{font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.5;}
+  .metric .t{font-size:10.5px;color:var(--muted);} .metric .v{font-size:15px;font-weight:bold;margin-top:2px;}
+  .spark{height:22px;margin-top:2px;}
+  .caprow{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:12px;}
+  .caprow .nm{color:var(--iq);font-weight:bold;width:110px;}
+  .caprow .b{flex:1;height:14px;background:#eef1f4;border-radius:3px;overflow:hidden;}
+  .caprow .b > i{display:block;height:100%;background:var(--iq);}
+
+  .alerts-tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:14px;background:#fff;}
+  .atab{flex:1;padding:14px;text-align:center;border-right:1px solid var(--border);}
+  .atab:last-child{border-right:none;}
+  .atab .n{font-size:22px;font-weight:bold;} .atab .l{font-size:11px;color:var(--muted);}
+  .atab.active{box-shadow:inset 0 -3px 0 var(--iq);}
+
+  /* selects */
+  .sel{border:1px solid #cfd4d9;border-radius:3px;padding:6px 10px;font-size:12.5px;background:#fff;display:inline-block;min-width:150px;}
+
+  /* ── Assistant ── */
+  #ai-fab{position:fixed;right:22px;bottom:22px;z-index:200;background:var(--iq);color:#fff;border:none;border-radius:26px;
+          padding:12px 19px;font-size:14px;font-weight:bold;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.28);display:flex;align-items:center;gap:9px;}
+  #ai-fab:hover{background:var(--iq-dark);}
+  #ai-panel{position:fixed;top:0;right:0;width:410px;max-width:94vw;height:100%;background:#f5f6f8;z-index:210;
+            box-shadow:-6px 0 24px rgba(0,0,0,.22);transform:translateX(100%);transition:transform .28s ease;display:flex;flex-direction:column;}
+  #ai-panel.open{transform:translateX(0);}
+  .ai-head{background:var(--iq);color:#fff;padding:15px 17px;display:flex;align-items:center;gap:11px;}
+  .ai-head .logo{font-size:20px;} .ai-head h2{margin:0;font-size:15px;} .ai-head .sub{font-size:11px;opacity:.9;margin-top:2px;}
+  .ai-head .close{margin-left:auto;cursor:pointer;font-size:19px;}
+  .ai-ctx{background:#eaf3fb;border-bottom:1px solid #d2e3f3;color:#2c5575;font-size:11.5px;padding:7px 16px;}
+  .ai-ctx b{color:#1c3e5e;}
+  .ai-body{flex:1;overflow-y:auto;padding:15px;}
+  .msg{margin:8px 0;max-width:88%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;}
+  .msg.user{background:var(--iq);color:#fff;margin-left:auto;border-bottom-right-radius:4px;}
+  .msg.bot{background:#fff;border:1px solid #e2e5e9;border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.05);}
+  .msg.bot strong{font-weight:bold;}
+  .codewrap{position:relative;margin:9px 0;}
+  .codewrap pre{background:#1e2530;color:#e8eef5;border-radius:6px;padding:11px 13px;margin:0;font-family:Consolas,monospace;font-size:12px;overflow-x:auto;white-space:pre;}
+  .copy{position:absolute;top:6px;right:6px;background:#33404f;color:#cfe0f2;border:none;border-radius:4px;font-size:11px;padding:3px 9px;cursor:pointer;}
+  .msg.bot code{background:#eef1f4;border:1px solid #e0e4e8;border-radius:3px;padding:1px 5px;font-family:Consolas,monospace;font-size:12px;}
+  .msg.bot .codewrap code{background:none;border:none;padding:0;}
+  .ai-link{color:var(--iq);font-weight:bold;cursor:pointer;border-bottom:1px dotted var(--iq);}
+  .sources{margin-top:8px;display:flex;flex-wrap:wrap;gap:5px;}
+  .src{font-size:10.5px;color:#37506e;background:#eef4fb;border:1px solid #cdddf0;border-radius:4px;padding:2px 7px;}
+  .suggest{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;}
+  .chip{font-size:12px;color:var(--iq);background:#fff;border:1px solid #cdddf0;border-radius:14px;padding:6px 11px;cursor:pointer;}
+  .chip:hover{background:#eef4fb;}
+  .typing span{display:inline-block;width:6px;height:6px;margin:0 1px;background:#9aa3ad;border-radius:50%;animation:blink 1.2s infinite both;}
+  .typing span:nth-child(2){animation-delay:.2s;} .typing span:nth-child(3){animation-delay:.4s;}
+  @keyframes blink{0%,80%,100%{opacity:.2;}40%{opacity:1;}}
+  .ai-input{border-top:1px solid #e0e3e7;background:#fff;padding:12px;display:flex;gap:8px;}
+  .ai-input input{flex:1;border:1px solid #cfd4d9;border-radius:20px;padding:10px 15px;font-size:13px;outline:none;}
+  .ai-input input:focus{border-color:var(--iq);}
+  .ai-input button{background:var(--iq);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:16px;cursor:pointer;}
+  .ai-foot{text-align:center;font-size:10.5px;color:#9aa3ad;padding:0 0 8px;background:#fff;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <span class="dell">MOCK</span><span style="font-weight:normal;margin-left:5px;">console</span>
+  <span class="divider"></span><span class="prod">InsightIQ</span>
+  <span class="icons"><span>⤢</span><span>🔔</span><span>👤</span><span>ⓘ</span><span>?</span></span>
+</div>
+
+<div class="shell">
+  <nav class="side">
+    <div class="nav-item active" data-nav="dashboard" onclick="go('dashboard')"><span class="ic">🏠</span> Dashboard</div>
+    <div class="nav-item" onclick="toggleSub('perf')"><span class="ic">📊</span> Performance Reports <span class="car">▸</span></div>
+    <div class="nav-item" data-nav="fsr" onclick="toggleSub('fsr')"><span class="ic">🗂️</span> File System Reports <span class="car" id="car-fsr">▾</span></div>
+    <div class="subnav" id="sub-fsr">
+      <a class="active" data-nav="capacity" onclick="go('capacity')">Capacity Reporting</a>
+      <a>File System Analytics</a><a>Deduplication Reporting</a><a>Quota Reporting</a><a>Data Reduction Reporting</a>
+    </div>
+    <div class="nav-item" data-nav="al" onclick="go('alerts')"><span class="ic">🔔</span> Alerts <span class="car" id="car-al">▾</span></div>
+    <div class="subnav" id="sub-al">
+      <a data-nav="alerts" onclick="go('alerts')">View Alerts</a><a>Manage Alerts</a>
+    </div>
+    <div class="nav-item" onclick="toggleSub('set')"><span class="ic">⚙️</span> Settings <span class="car">▾</span></div>
+    <div class="subnav" id="sub-set">
+      <a>Manage Monitored Clusters</a><a>Configure SMTP</a><a>Manage Users</a>
+    </div>
+  </nav>
+
+  <main class="main">
+    <!-- ═══ Dashboard ═══ -->
+    <section class="page active" data-page="dashboard">
+      <h1 class="pt">Dashboard</h1>
+      <div class="grid3">
+        <div class="panel"><div class="panel-h">▦ InsightIQ Status <span class="ok" style="margin-left:6px;">✔ Normal</span></div>
+          <div class="panel-b">
+            <div style="display:flex;gap:16px;align-items:center;">
+              <div class="donut" style="background:conic-gradient(var(--green) 0 66%, var(--donutgrey) 66% 100%);">
+                <div class="lbl"><b>3</b><span>Total Clusters</span></div></div>
+              <div class="legend" style="flex:1;">
+                <div class="row"><span class="dot" style="background:var(--green);"></span>Actively Monitoring<span class="val">2</span></div>
+                <div class="row"><span class="dot" style="background:var(--red);"></span>Monitoring Errors<span class="val">0</span></div>
+                <div class="row"><span class="dot" style="background:var(--donutgrey);"></span>Monitoring Suspended<span class="val">1</span></div>
+                <div class="row"><span class="dot" style="background:var(--info);"></span>Other Clusters<span class="val">0</span></div>
+              </div>
+            </div>
+            <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:10px;">
+              <div class="kv"><span>Total Monitored Nodes:</span><b>10</b></div>
+              <div class="muted" style="margin-top:6px;">InsightIQ Datastore</div>
+              <div class="kv"><span>Total: 1.47 TiB</span><span>Used: 4%</span><span>Free: 1.41 TiB</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel"><div class="panel-h">🔔 Alerts <span class="r">Last 24 Hours</span></div>
+          <div class="panel-b" id="dash-alerts" style="padding:2px 0;"></div>
+        </div>
+
+        <div class="panel"><div class="panel-h">▤ Aggregated Capacity For Monitored Clusters <span class="r">ⓘ</span></div>
+          <div class="panel-b">
+            <div class="kv"><span>Total Raw Capacity</span><b>166.10 TiB</b></div>
+            <div class="bar"><i style="width:2.6%;background:var(--iq);"></i><i style="width:97.4%;background:var(--greenL);"></i></div>
+            <div class="kv"><span><span class="dot" style="background:var(--iq);"></span> Used Raw Capacity</span><b>4.31 TiB (2.59%)</b></div>
+            <div class="kv"><span><span class="dot" style="background:var(--greenL);"></span> Free Raw Capacity</span><b>161.80 TiB (97.41%)</b></div>
+            <div class="kv" style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;"><span>Total Estimated Usable</span><b>279.70 GiB</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-h">Performance Overview <span class="r">🔍 Last 24 Hours ⋮</span></div>
+          <div class="panel-b">
+            <div class="muted" style="margin-bottom:8px;">Total Clusters (3)&nbsp;&nbsp;<span style="font-size:11px;">Showing average values</span></div>
+            <div class="pcard">
+              <div><div class="nm">demo-h700</div><div class="meta">Nodes : 6<br>Cluster Time: 07/02/2026 06:14 PM GMT<br><a>⧉ Launch OneFS</a></div></div>
+              <div class="metric"><div class="t">Protocol Latency</div><div class="v">630 ms</div><svg class="spark" viewBox="0 0 80 22"><polyline points="0,16 15,14 30,15 45,6 60,12 80,11" fill="none" stroke="#0076CE" stroke-width="1.5"/></svg></div>
+              <div class="metric"><div class="t">Network Throughput</div><div class="v">279 Kb/s</div><svg class="spark" viewBox="0 0 80 22"><polyline points="0,14 15,10 30,16 45,9 60,13 80,8" fill="none" stroke="#0076CE" stroke-width="1.5"/></svg></div>
+              <div class="metric"><div class="t">CPU Usage</div><div class="v">2.36%</div><svg class="spark" viewBox="0 0 80 22"><polyline points="0,15 20,13 40,16 60,10 80,14" fill="none" stroke="#0076CE" stroke-width="1.5"/></svg></div>
+            </div>
+            <div class="pcard">
+              <div><div class="nm">demo-f900</div><div class="meta">Nodes : 4<br>Cluster Time: 07/02/2026 06:20 PM GMT<br><a>⧉ Launch OneFS</a></div></div>
+              <div class="metric"><div class="t">Protocol Latency</div><div class="v">46.5 ms</div><svg class="spark" viewBox="0 0 80 22"><polyline points="0,15 18,6 30,17 50,14 65,15 80,13" fill="none" stroke="#0076CE" stroke-width="1.5"/></svg></div>
+              <div class="metric"><div class="t">Network Throughput</div><div class="v">80.9 Kb/s</div><svg class="spark" viewBox="0 0 80 22"><polyline points="0,14 20,12 40,15 60,11 80,13" fill="none" stroke="#0076CE" stroke-width="1.5"/></svg></div>
+              <div class="metric"><div class="t">CPU Usage</div><div class="v">0.43%</div><svg class="spark" viewBox="0 0 80 22"><polyline points="0,16 20,15 40,16 60,14 80,15" fill="none" stroke="#0076CE" stroke-width="1.5"/></svg></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-h">Monitored Clusters by % Used Capacity <span class="r">ⓘ</span></div>
+          <div class="panel-b">
+            <div class="caprow"><span class="nm">demo-f900</span><span class="b"><i style="width:3%;"></i></span><span>2.51%</span></div>
+            <div class="muted" style="font-size:11px;margin:-4px 0 10px 0;">Free 161.38 TiB · DR Ratio 1:1</div>
+            <div class="caprow"><span class="nm">demo-h700</span><span class="b"><i style="width:28%;"></i></span><span>27.71%</span></div>
+            <div class="muted" style="font-size:11px;margin:-4px 0 0 0;">Free 422.86 GiB · Usable 279.70 GiB · DR 1:1</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ Capacity Reporting ═══ -->
+    <section class="page" data-page="capacity">
+      <div class="toolbar"><h1 class="pt" style="margin:0;">Capacity Reporting</h1>
+        <div class="acts"><a>⧉ Launch OneFS</a><a>🔗 Share Link</a></div></div>
+      <div style="margin-bottom:14px;">Cluster: <span class="sel">demo-h700 ▾</span>
+        <span class="help-ai" style="margin-left:6px;cursor:pointer;" title="Ask AI about this" onclick='AI.fieldAsk("How does InsightIQ calculate estimated usable capacity, and what is protection overhead?")'>✨</span></div>
+      <div class="grid2">
+        <div class="panel"><div class="panel-h">▤ Capacity Breakdown</div>
+          <div class="panel-b" style="display:flex;gap:18px;align-items:center;">
+            <div class="donut" style="width:150px;height:150px;background:conic-gradient(var(--green) 0 72%, var(--info) 72% 95%, #E8B84B 95% 99.3%, #E0852B 99.3% 100%);">
+              <div class="lbl"><b style="font-size:15px;">584.92</b><span>GiB Total</span></div></div>
+            <div class="legend" style="flex:1;">
+              <div class="row"><span class="dot" style="background:#E6438A;"></span>Unprovisioned Capacity<span class="val">0 B</span></div>
+              <div class="row"><span class="dot" style="background:var(--info);"></span>Virtual Hot Spares<span class="val">136.69 GiB</span></div>
+              <div class="row"><span class="dot" style="background:#E8B84B;"></span>User Data Including Protection<span class="val">25.37 GiB</span></div>
+              <div class="row"><span class="dot" style="background:#E0852B;"></span>Snapshot Usage<span class="val">356.50 KiB</span></div>
+              <div class="row"><span class="dot" style="background:var(--green);"></span>Free Raw Capacity<span class="val">422.86 GiB</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel"><div class="panel-h">▤ Current Estimated Usable Capacity</div>
+          <div class="panel-b">
+            <div class="muted">Estimated Additional Protection Overhead
+              <span class="help-ai" style="cursor:pointer;" title="Ask AI about this" onclick='AI.fieldAsk("What is protection overhead in OneFS capacity, and why does it reduce usable capacity?")'>✨</span></div>
+            <div style="font-size:26px;font-weight:bold;margin:6px 0 14px;">143.16 GiB</div>
+            <div class="muted">Estimated Usable Capacity
+              <span class="help-ai" style="cursor:pointer;" title="Ask AI about this" onclick='AI.fieldAsk("What does estimated usable capacity mean and how should I plan against it?")'>✨</span></div>
+            <div style="font-size:26px;font-weight:bold;color:var(--green);margin-top:6px;">279.70 GiB</div>
+          </div>
+        </div>
+      </div>
+      <div class="panel"><div class="panel-h">Capacity Forecast <span class="r">Last 1 Week · Total Usage</span></div>
+        <div class="panel-b">
+          <svg viewBox="0 0 900 150" style="width:100%;height:150px;">
+            <line x1="0" y1="120" x2="900" y2="120" stroke="#e1e5ea"/>
+            <polyline points="0,100 120,99 240,101 360,98 480,100 600,97 720,96 800,80 900,74" fill="none" stroke="#C2477F" stroke-width="2"/>
+            <text x="4" y="60" font-size="11" fill="#9aa3ad">4.5%</text><text x="4" y="115" font-size="11" fill="#9aa3ad">3%</text>
+          </svg>
+          <div class="muted" style="text-align:center;font-size:11px;">Total usage rose from ~3.5% to ~4.2% over the past week. Click‑drag on the chart to forecast.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ View Alerts ═══ -->
+    <section class="page" data-page="alerts">
+      <h1 class="pt">View Alerts</h1>
+      <div style="margin-bottom:14px;">Duration: <span class="sel">Last 24 Hours ▾</span> &nbsp; Clusters: <span class="sel">All Clusters ▾</span></div>
+      <div class="alerts-tabs">
+        <div class="atab active"><div class="n">4</div><div class="l">Alerts Total</div></div>
+        <div class="atab"><div class="n" style="color:var(--red);">✕ 0</div><div class="l">Emergency</div></div>
+        <div class="atab"><div class="n" style="color:var(--red);">1</div><div class="l">Critical</div></div>
+        <div class="atab"><div class="n" style="color:var(--amber);">⚠ 2</div><div class="l">Warning</div></div>
+        <div class="atab"><div class="n" style="color:var(--info);">ⓘ 1</div><div class="l">Information</div></div>
+      </div>
+      <div class="panel"><div class="panel-b" style="padding:0;">
+        <table>
+          <tr><th>Alert ID</th><th>Date &amp; Time</th><th>Severity</th><th>Message</th><th>Metric</th><th>Generated For</th><th></th></tr>
+          <tr>
+            <td>AL-100234</td><td>Jul 02, 2026 11:40</td><td><span class="sev crit">Critical</span></td>
+            <td>Cluster capacity usage exceeded the 90% threshold</td><td>Capacity</td><td>demo-h700</td>
+            <td><span class="explain" onclick="AI.explainAlert(0)">✨ Explain</span></td>
+          </tr>
+          <tr>
+            <td>AL-100221</td><td>Jul 02, 2026 09:12</td><td><span class="sev warn">Warning</span></td>
+            <td>Average protocol latency above 500 ms</td><td>Protocol Latency</td><td>demo-h700</td>
+            <td><span class="explain" onclick="AI.explainAlert(1)">✨ Explain</span></td>
+          </tr>
+          <tr>
+            <td>AL-100205</td><td>Jul 01, 2026 23:51</td><td><span class="sev warn">Warning</span></td>
+            <td>Drive in bay 3 on node 10 reported a predictive failure (SMART)</td><td>Drive Health</td><td>demo-h700</td>
+            <td><span class="explain" onclick="AI.explainAlert(2)">✨ Explain</span></td>
+          </tr>
+          <tr>
+            <td>AL-100198</td><td>Jul 01, 2026 20:03</td><td><span class="sev info">Information</span></td>
+            <td>Node 20 lost NTP synchronization; time drift detected</td><td>Cluster Event</td><td>demo-f900</td>
+            <td><span class="explain" onclick="AI.explainAlert(3)">✨ Explain</span></td>
+          </tr>
+        </table>
+      </div></div>
+    </section>
+  </main>
+</div>
+
+<!-- Assistant -->
+<button id="ai-fab" onclick="AI.toggle(true)"><span>✨</span> AI Assistant</button>
+<aside id="ai-panel" aria-label="InsightIQ AI Assistant">
+  <div class="ai-head"><div class="logo">📈</div>
+    <div><h2>InsightIQ Assistant</h2><div class="sub">Grounded in official documentation · cites its sources</div></div>
+    <div class="close" onclick="AI.toggle(false)">✕</div></div>
+  <div class="ai-ctx">📍 Viewing: <b id="ai-ctx-page">Dashboard</b></div>
+  <div class="ai-body" id="ai-body"></div>
+  <div class="ai-input">
+    <input id="ai-text" type="text" placeholder="Ask about InsightIQ or your clusters..." onkeydown="if(event.key==='Enter')AI.send()" autocomplete="off">
+    <button id="ai-send" onclick="AI.send()">➤</button></div>
+  <div class="ai-foot">Answers grounded in official documentation</div>
+</aside>
+
+<script>
+const PAGES = { dashboard:"Dashboard", capacity:"Capacity Reporting", alerts:"View Alerts" };
+let currentPage = "dashboard";
+
+// sample alerts (mock) — shared by the dashboard panel, the View Alerts table, and Explain
+const ALERTS = [
+  { sev:"Critical",    msg:"Cluster capacity usage exceeded the 90% threshold", metric:"Capacity", cl:"demo-h700" },
+  { sev:"Warning",     msg:"Average protocol latency above 500 ms", metric:"Protocol Latency", cl:"demo-h700" },
+  { sev:"Warning",     msg:"Drive in bay 3 on node 10 reported a predictive failure (SMART)", metric:"Drive Health", cl:"demo-h700" },
+  { sev:"Information",  msg:"Node 20 lost NTP synchronization; time drift detected", metric:"Cluster Event", cl:"demo-f900" },
+];
+const sevClass = s => s==='Critical' ? 'crit' : (s==='Warning' ? 'warn' : 'info');
+function renderDashAlerts(){
+  const el = document.getElementById('dash-alerts'); if(!el) return;
+  el.innerHTML = ALERTS.map((a,i) =>
+    `<div style="display:flex;align-items:center;gap:9px;padding:9px 14px;border-bottom:1px solid var(--border);">
+       <span class="sev ${sevClass(a.sev)}">${a.sev}</span>
+       <span style="flex:1;font-size:12px;line-height:1.4;">${a.msg} <span class="muted">· ${a.cl}</span></span>
+       <span class="explain" style="flex-shrink:0;" onclick="AI.explainAlert(${i})">✨ Explain</span>
+     </div>`).join('') +
+    `<div style="text-align:right;padding:9px 14px;"><a onclick="go('alerts')">View all alerts →</a></div>`;
+}
+function toggleSub(id){ const el=document.getElementById('sub-'+id); if(el) el.style.display = (el.style.display==='none'?'block':'none'); }
+function go(page){
+  if(!PAGES[page]) return;
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(s=>s.classList.toggle('active', s.dataset.page===page));
+  document.querySelectorAll('[data-nav]').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll(`[data-nav="${page}"]`).forEach(n=>n.classList.add('active'));
+  if(page==='dashboard') document.querySelector('[data-nav="dashboard"]').classList.add('active');
+  document.getElementById('ai-ctx-page').textContent = PAGES[page];
+  window.scrollTo({top:0,behavior:'smooth'});
+  AI.onPageChange();
+}
+function openNav(name){ /* placeholder for off-map links */ }
+
+const AI = (() => {
+  const SUGGEST = {
+    dashboard: ["What is the status of my clusters?","What can InsightIQ monitor?"],
+    capacity: ["What is virtual hot spare capacity?","What does estimated usable capacity mean?","What is protection overhead?"],
+    alerts: ["What does a capacity threshold alert mean?","What causes high protocol latency?","How do I respond to a drive predictive failure?"],
+  };
+  // ALERTS is defined globally (shared with the dashboard panel)
+  const NAV = [
+    { pat:"Capacity Reporting", type:"page", target:"capacity" },
+    { pat:"View Alerts", type:"page", target:"alerts" },
+    { pat:"Dashboard", type:"page", target:"dashboard" },
+  ];
+  let busy=false, started=false;
+  const body=()=>document.getElementById('ai-body');
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const lightRender=s=>esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+
+  function renderRich(raw){
+    const blocks=[]; let t=raw;
+    t=t.replace(/```[a-zA-Z0-9]*\n?([\s\S]*?)```/g,(m,c)=>{blocks.push(c.replace(/\n+$/,''));return `@@CB${blocks.length-1}@@`;});
+    t=t.replace(/`((?:sudo\s+)?isi\s[^`\n]*)`/g,(m,cmd)=>{blocks.push(cmd.trim());return `@@CB${blocks.length-1}@@`;});
+    t=t.split('\n').map(line=>/^\s*(sudo\s+)?isi\s+\S/.test(line)?(blocks.push(line.trim()),`@@CB${blocks.length-1}@@`):line).join('\n');
+    t=esc(t);
+    t=t.replace(/`([^`\n]+)`/g,(m,c)=>`<code>${c}</code>`);
+    t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    for(const d of NAV){ const re=new RegExp(d.pat,'i'); t=t.replace(re,m=>`<span class="ai-link" data-type="${d.type}" data-target="${d.target}">${m}</span>`); }
+    t=t.replace(/@@CB(\d+)@@/g,(m,i)=>`<div class="codewrap"><button class="copy" onclick="AI.copy(this)">Copy</button><pre>${esc(blocks[+i])}</pre></div>`);
+    return t;
+  }
+  function copy(btn){ const code=btn.parentElement.querySelector('pre').innerText; const done=()=>{const o=btn.textContent;btn.textContent='Copied!';setTimeout(()=>btn.textContent=o,1300);};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(done).catch(()=>done());}else{done();} }
+  function navTo(type,target){ if(type==='page') go(target); }
+
+  function welcome(){
+    const chips=(SUGGEST[currentPage]||SUGGEST.dashboard).map(q=>`<div class="chip" onclick="AI.ask('${q.replace(/'/g,"\\'")}')">${q}</div>`).join('');
+    body().innerHTML=`<div class="msg bot">👋 Hi! I'm your InsightIQ assistant. You're on the <strong>${PAGES[currentPage]}</strong> page.
+      Ask me about your clusters, reports, or alerts — I answer from the official documentation and cite my sources.
+      <div class="suggest">${chips}</div></div>`;
+  }
+  function onPageChange(){ if(!started) welcome(); }
+  function toggle(open){ document.getElementById('ai-panel').classList.toggle('open',open); if(open){ if(!started) welcome(); document.getElementById('ai-text').focus(); } }
+  function addMsg(cls,html){ const d=document.createElement('div'); d.className='msg '+cls; d.innerHTML=html; body().appendChild(d); body().scrollTop=body().scrollHeight; return d; }
+  function ask(q){ document.getElementById('ai-text').value=q; send(); }
+  function fieldAsk(q){ toggle(true); ask(q); }
+  function explainAlert(i){ const a=ALERTS[i]; go('alerts');
+    fieldAsk(`Explain this InsightIQ alert — ${a.sev}: "${a.msg}" on cluster ${a.cl} (metric: ${a.metric}). What does it mean, is it serious, and how should an administrator resolve it?`); }
+
+  async function send(){
+    if(busy) return;
+    const input=document.getElementById('ai-text'); const q=input.value.trim(); if(!q) return;
+    input.value=''; busy=true; started=true; document.getElementById('ai-send').disabled=true;
+    addMsg('user',esc(q));
+    const bot=addMsg('bot','<div class="typing"><span></span><span></span><span></span></div>');
+    let answer='',sources=[],errMsg=null;
+    try{
+      const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({question:q, context:`the ${PAGES[currentPage]} page of Dell PowerScale InsightIQ`, product:'insightiq'})});
+      const reader=res.body.getReader(); const dec=new TextDecoder(); let buf='';
+      while(true){ const {value,done}=await reader.read(); if(done) break;
+        buf+=dec.decode(value,{stream:true}); const parts=buf.split('\n\n'); buf=parts.pop();
+        for(const p of parts){ const line=p.replace(/^data: /,'').trim(); if(!line) continue; const ev=JSON.parse(line);
+          if(ev.token){ answer+=ev.token; bot.innerHTML=lightRender(answer); body().scrollTop=body().scrollHeight; }
+          if(ev.error){ errMsg=ev.error; }
+          if(ev.done&&ev.sources){ sources=ev.sources; } } }
+      if(errMsg){ bot.innerHTML='⚠️ '+esc(errMsg); }
+      else{ let html=answer.trim()?renderRich(answer):"I don't have sufficient information in the loaded documentation to answer this accurately.";
+        if(sources.length) html+='<div class="sources">'+sources.map(s=>`<span class="src">📄 ${esc(s)}</span>`).join('')+'</div>';
+        bot.innerHTML=html; }
+      body().scrollTop=body().scrollHeight;
+    }catch(e){ bot.innerHTML='⚠️ Connection error: '+esc(String(e)); }
+    finally{ busy=false; document.getElementById('ai-send').disabled=false; input.focus(); }
+  }
+  return { toggle, send, ask, fieldAsk, explainAlert, copy, navTo, onPageChange };
+})();
+document.getElementById('ai-body').addEventListener('click',e=>{ const l=e.target.closest('.ai-link'); if(l) AI.navTo(l.dataset.type,l.dataset.target); });
+renderDashAlerts();
+</script>
+<div style="position:fixed;left:10px;bottom:10px;z-index:9999;pointer-events:none;font:11px/1.3 Arial,sans-serif;background:rgba(0,0,0,.72);color:#fff;padding:4px 8px;border-radius:4px;">Unofficial prototype &middot; sample data &middot; not a Dell product</div>
+</body>
+</html>

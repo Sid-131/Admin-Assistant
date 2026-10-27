@@ -1,0 +1,18 @@
+# Dev / ingest environment.
+#
+# Serving (web/server_local.py) needs only flask + chromadb + llama-cpp-python.
+# llama-cpp-python is NOT pinned here: it ships prebuilt in the portable bundle,
+# and when building from source it must come from the CPU wheel index pinned to
+# an AVX2 build (0.2.90) -- newer wheels are AVX-512 and crash on consumer Intel
+# CPUs. See README "Building from source".
+#
+# The llama-index stack below is used only by the ingest scripts (ingest.py,
+# ingest_insightiq.py) to build the ChromaDB, not at serving time.
+
+llama-index==0.12.4
+llama-index-vector-stores-chroma==0.4.1
+llama-index-embeddings-ollama==0.5.0
+llama-index-readers-file==0.4.5
+chromadb==0.6.3
+pypdf==5.9.0
+flask==3.1.0
